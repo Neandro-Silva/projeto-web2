@@ -1,150 +1,79 @@
-/*
 const express = require('express')
-const app = express();
-const porta = 3000;
-const User = require('./models/User') 
+const bodyParser = require('body-parser')
+const mysql = require('mysql2')
+const cors = require('cors')
 
-app.use(express.json())
+const app = express()
+const port = 3000
 
-app.get("/", async (req, res) => {
-    //res.send("Pagina inicial - teste")
-    res.sendFile(__dirname + "/src/index.html")
-})
+app.use(cors())
 
-app.get("/consulta", async (req, res) => {
-    res.send.sendFile(__dirname + "/src/consulta.html")
-})
-
-app.post("/cadastrar", async (req, res) => {
-    //console.log(req.body)
-
-    await User.create(req.body)
-    .then(() => {
-        return res.json({
-            erro: false,
-            mensagem: "Usuario cadastrado com sucesso!"
-        })
-    }).catch(() => {
-        return res.status(400).json({
-            erro: false,
-            mensagem: "Erro: Usuario não cadastrado com sucesso!"
-        })
-    })
-
-    //res.send("Pagina cadastrar")
-})
-
-app.listen(porta, () => {
-    console.log(`Servidor iniciado na porta ${porta}: http://localhost:3000`)
-})*/
-
-const mysql = require('mysql2/promise');
-const express = require('express');
-const bodyParser = require('body-parser');
-
-const app = express();
-
-app.get("/", async (req, res) => {
-    res.sendFile(__dirname + "/src/index.html");
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'Brasil123#@!',
+    database: 'ocamento'
 });
 
-app.get("/c2", async (req, res) => {
-    res.sendFile(__dirname + "/src/consulta.html");
-});
-
-app.use(bodyParser.urlencoded({ extended: true }));
-
-class Despesa {
-    constructor(ano, mes, dia, tipo, descricao, valor) {
-        this.ano = ano;
-        this.mes = mes;
-        this.dia = dia;
-        this.tipo = tipo;
-        this.descricao = descricao;
-        this.valor = valor; // ou parseInt, dependendo dos requisitos
-    }
-
-    validarDados() {
-        if (!this.ano || !this.mes || !this.dia || !this.tipo || !this.descricao || !this.valor) {
-            return false; // Campos obrigatórios não preenchidos
-        }
-    
-        if (typeof this.valor !== 'number' || this.valor <= 0) {
-            return false; // Valor inválido
-        }
-    
-        // Outras verificações conforme necessário
-    
-        return true; // Dados válidos
-    }
-}
-
-
-class Bd {
-    constructor() {
-        this.pool = mysql.createPool({
-            host: 'localhost',
-            user: 'root',
-            password: 'Brasil123#@!',
-            database: 'ocamento',
-            waitForConnections: true,
-            connectionLimit: 10,
-            queueLimit: 0
-        });
-    }
-
-    async gravar(d) {
-        let connection;
-        try {
-            connection = await this.pool.getConnection();
-            const [rows, fields] = await connection.execute(
-                'INSERT INTO despesa (ano, mes, dia, tipo, descricao, valor) VALUES (?, ?, ?, ?, ?, ?)',
-                [d.ano, d.mes, d.dia, d.tipo, d.descricao, d.valor]
-            );
-            console.log('Despesa salva com sucesso.');
-        } catch (error) {
-            console.error('Erro ao salvar despesa:', error);
-        }
-    }
-
-    async recuperarTodosRegistros() {
-        try {
-            const [rows, fields] = await this.connection.execute('SELECT * FROM despesa');
-            const despesas = rows.map(row => ({
-                ano: row.ano,
-                mes: row.mes,
-                dia: row.dia,
-                tipo: row.tipo,
-                descricao: row.descricao,
-                valor: row.valor,
-                id: row.id
-            }));
-            return despesas;
-        } catch (error) {
-            console.error('Erro ao recuperar despesas:', error);
-            return [];
-        }
-    }
-
-    
-}
-
-const bd = new Bd();
-
-
-app.post('/add-despesa', (req, res) => {
-    const { ano, mes, dia, tipo, descricao, valor } = req.body;
-    const despesa = new Despesa(ano, mes, dia, tipo, descricao, valor);
-    if (despesa.validarDados()) {
-        bd.gravar(despesa);
-        res.status(200).json({ message: 'Despesa salva com sucesso' });
+connection.connect((err) => {
+    if (err) {
+        console.error('Erro ao conectar ao MySQL:', err);
     } else {
-        res.status(400).json({ message: 'Dados de despesas inválidos' });
+        console.log('Conectado ao MySQL');
     }
 });
 
+// Criação da tabela se não existir
+const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS despesa (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ano INT(11) NOT NULL,
+        dia INT(11) NOT NULL,
+        tipo INT(11) NOT NULL,
+        descricao VARCHAR(255) NOT NULL,
+        valor FLOAT NOT NULL
+    )
+`;
+connection.query(createTableQuery, (err) => {
+    if (err) {
+        console.error('Erro ao criar tabela:', err);
+    } else {
+        console.log('Tabela criada ou já existente');
+    }
+});
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta: ${PORT}`);
+app.use(bodyParser.json());
+
+// Rota para salvar dados no MySQL
+app.post('/salvar-dados', (req, res) => {
+    const { ano, mes, dia, tipo, descricao, valor } = req.body;
+
+    const insertQuery = 'INSERT INTO despesa (ano, mes, dia, tipo, descricao, valor) VALUES (?, ?, ?, ?, ?, ?)';
+    connection.query(insertQuery, [ano, mes, dia, tipo, descricao, valor], (err, results) => {
+        if (err) {
+            console.error('Erro ao salvar dados no MySQL:', err);
+            res.status(500).send('Erro ao salvar dados no MySQL');
+        } else {
+            console.log('Dados salvos com sucesso no MySQL');
+            res.status(200).json({ message: 'Dados salvos com sucesso' });
+        }
+    });
+});
+
+// Rota para consultar e exibir dados
+app.get('/consultar-dados', (req, res) => {
+    const selectQuery = 'SELECT * FROM despesa';
+    connection.query(selectQuery, (err, results) => {
+        if (err) {
+            console.error('Erro ao consultar dados no MySQL:', err);
+            res.status(500).send('Erro ao consultar dados no MySQL');
+        } else {
+            console.log('Dados consultados com sucesso no MySQL');
+            res.status(200).json(results);
+        }
+    });
+});
+
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}`);
 });

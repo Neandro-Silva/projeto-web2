@@ -13,8 +13,6 @@
 
     <!-- Font Awesome -->
     <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-    <script src="app.js"></script>
     
 	</head>
 
@@ -103,7 +101,7 @@
         </div>
 
         <div class="col-md-2 d-flex justify-content-end">
-          <button type="button" class="btn btn-primary" onclick="pesquisarDespesa()">
+          <button type="button" class="btn btn-primary" id="pesquisarDespesa">
             <i class="fas fa-search"></i>
           </button>
         </div> 
@@ -122,12 +120,16 @@
               </tr>
             </thead>
               
-            <tbody id="listaDespesas">
+            <tbody id="dadosLista">
             </tbody>
           </table>
         </div>
       </div>
     </div>
+
+    <script src="app.js"></script>
+    <script src="./assets/js/cadastro.js"></script>
+    <script src="./assets/js/consulta.js"></script>
   </body>	
 
 </html>
