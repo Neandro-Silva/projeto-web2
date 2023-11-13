@@ -45,33 +45,59 @@ const bodyParser = require('body-parser');
 const app = express();
 
 app.get("/", async (req, res) => {
-    //res.send("Pagina inicial - teste")
-    res.sendFile(__dirname + "/src/index.html")
-})
+    res.sendFile(__dirname + "/src/index.html");
+});
 
-app.get("/c", async (req, res) => {
-    res.sendFile(__dirname + "/src/consulta.html")
-})
+app.get("/c2", async (req, res) => {
+    res.sendFile(__dirname + "/src/consulta.html");
+});
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
 class Despesa {
-    // 
+    constructor(ano, mes, dia, tipo, descricao, valor) {
+        this.ano = ano;
+        this.mes = mes;
+        this.dia = dia;
+        this.tipo = tipo;
+        this.descricao = descricao;
+        this.valor = valor; // ou parseInt, dependendo dos requisitos
+    }
+
+    validarDados() {
+        if (!this.ano || !this.mes || !this.dia || !this.tipo || !this.descricao || !this.valor) {
+            return false; // Campos obrigatórios não preenchidos
+        }
+    
+        if (typeof this.valor !== 'number' || this.valor <= 0) {
+            return false; // Valor inválido
+        }
+    
+        // Outras verificações conforme necessário
+    
+        return true; // Dados válidos
+    }
 }
+
 
 class Bd {
     constructor() {
-        this.connection = mysql.createConnection({
+        this.pool = mysql.createPool({
             host: 'localhost',
             user: 'root',
             password: 'Brasil123#@!',
-            database: 'ocamento'
+            database: 'ocamento',
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
         });
     }
 
     async gravar(d) {
+        let connection;
         try {
-            const [rows, fields] = await this.connection.execute(
+            connection = await this.pool.getConnection();
+            const [rows, fields] = await connection.execute(
                 'INSERT INTO despesa (ano, mes, dia, tipo, descricao, valor) VALUES (?, ?, ?, ?, ?, ?)',
                 [d.ano, d.mes, d.dia, d.tipo, d.descricao, d.valor]
             );
