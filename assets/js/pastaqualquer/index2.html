@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar e Excluir</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        input {
+            width: 80px; /* Ajuste a largura conforme necessário */
+        }
+    </style>
+</head>
+<body>
+
+<table id="tabela">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>João</td>
+            <td>joao@example.com</td>
+            <td>
+                <button onclick="editarLinha(this)">Editar</button>
+                <button onclick="excluirLinha(this)">Excluir</button>
+            </td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Maria</td>
+            <td>maria@example.com</td>
+            <td>
+                <button onclick="editarLinha(this)">Editar</button>
+                <button onclick="excluirLinha(this)">Excluir</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    function editarLinha(botao) {
+        var linha = botao.parentNode.parentNode;
+
+        // Obter os valores atuais das células
+        var id = linha.cells[0].innerText;
+        var nome = linha.cells[1].innerText;
+        var email = linha.cells[2].innerText;
+
+        // Substituir os textos por campos de entrada
+        linha.cells[0].innerHTML = '<input type="text" value="' + id + '" readonly>';
+        linha.cells[1].innerHTML = '<input type="text" value="' + nome + '">';
+        linha.cells[2].innerHTML = '<input type="text" value="' + email + '">';
+
+        // Substituir o botão "Editar" por "Salvar"
+        botao.innerHTML = "Salvar";
+        botao.onclick = function () {
+            salvarEdicao(linha);
+        };
+    }
+
+    function salvarEdicao(linha) {
+        // Obter os valores dos campos de entrada
+        var id = linha.cells[0].getElementsByTagName("input")[0].value;
+        var nome = linha.cells[1].getElementsByTagName("input")[0].value;
+        var email = linha.cells[2].getElementsByTagName("input")[0].value;
+
+        // Atualizar os valores das células
+        linha.cells[0].innerText = id;
+        linha.cells[1].innerText = nome;
+        linha.cells[2].innerText = email;
+
+        // Substituir o botão "Salvar" por "Editar"
+        var botaoEditar = document.createElement("button");
+        botaoEditar.innerHTML = "Editar";
+        botaoEditar.onclick = function () {
+            editarLinha(botaoEditar);
+        };
+
+        linha.cells[3].innerHTML = "";
+        linha.cells[3].appendChild(botaoEditar);
+    }
+
+    function excluirLinha(botao) {
+        var tabela = document.getElementById("tabela");
+        var linha = botao.parentNode.parentNode;
+        tabela.deleteRow(linha.rowIndex);
+
+        // Aqui você pode implementar a lógica para excluir os dados da linha.
+        // Por exemplo, você pode enviar uma solicitação para um servidor para excluir os dados.
+
+        alert("Excluir ID: " + linha.cells[0].innerText);
+    }
+</script>
+
+</body>
+</html>
